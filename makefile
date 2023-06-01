@@ -1,7 +1,8 @@
 todo: spinningcube_withlight
 
-spinningcube_withlight: spinningcube_withlight.cpp textfile.c
-	gcc $^ -lGL -lGLEW -lglfw -lm -o $@
+LDLIBS=-lGL -lGLEW -lglfw -lm 
+
+spinningcube_withlight: spinningcube_withlight.o textfile.o
 
 clean:
 	rm -f *.o *~
