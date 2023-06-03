@@ -305,7 +305,7 @@ void render(double currentTime, GLuint *vao) {
                             glm::vec3(0.0f, 0.0f, 0.0f),  // target
                             glm::vec3(0.0f, 1.0f, 0.0f)); // up
 
- model_matrix = glm::rotate(model_matrix,
+  model_matrix = glm::rotate(model_matrix,
                           glm::radians((float)currentTime * 30.0f),
                           glm::vec3(0.0f, 1.0f, 0.0f));
 
@@ -375,9 +375,9 @@ void obtenerNormales(GLfloat * normales,const GLfloat vertices[]){
     normales[i + 1] = y;  normales[i+4] = y; normales[i+7] = y;
     normales[i + 2] = z;  normales[i+5] = z; normales[i+8] = z;
     
-    printf("[%f, ", normales[i]);
-    printf("%f, ", normales[i + 1]);
-    printf("%f] \n", normales[i + 2]);
+    // printf("[%f, ", normales[i]);
+    // printf("%f, ", normales[i + 1]);
+    // printf("%f] \n", normales[i + 2]);
   }
 
 }
