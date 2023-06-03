@@ -27,7 +27,8 @@ void obtenerNormales(GLfloat * normales,const GLfloat vertices[]);
 GLuint shader_program = 0; // shader program to set render pipeline
 GLuint vao = 0; // Vertext Array Object to set input data
 GLint model_location, view_location, proj_location, normal_location; // Uniforms for transformation matrices
-GLint light_position_location, light_ambient_location, light_diffuse_location, light_specular_location; // Uniforms for light data
+GLint light_position_location, light_ambient_location, light_diffuse_location, light_specular_location; // Uniforms for light1 data
+GLint light2_position_location, light2_ambient_location, light2_diffuse_location, light2_specular_location; // Uniforms for light2 data
 GLint material_ambient_location, material_diffuse_location, material_specular_location, material_shininess_location; // Uniforms for material matrices
 GLint camera_pos_location;
 
@@ -38,11 +39,17 @@ const char *fragmentFileName = "spinningcube_withlight_fs.glsl";
 // Camera
 glm::vec3 camera_pos(0.0f, 0.0f, 3.0f);
 
-// Lighting
+// Lighting (light1)
 glm::vec3 light_pos(1.2f, 1.0f, 2.0f);
 glm::vec3 light_ambient(0.2f, 0.2f, 0.2f);
 glm::vec3 light_diffuse(0.5f, 0.5f, 0.5f);
 glm::vec3 light_specular(1.0f, 1.0f, 1.0f);
+
+// Lighting (light2)
+glm::vec3 light2_pos(1.0f, 1.0f, 2.0f);
+glm::vec3 light2_ambient(0.2f, 0.2f, 0.2f);
+glm::vec3 light2_diffuse(0.5f, 0.5f, 0.5f);
+glm::vec3 light2_specular(1.0f, 1.0f, 1.0f);
 
 // Material
 glm::vec3 material_ambient(1.0f, 0.5f, 0.31f);
@@ -260,12 +267,18 @@ int main() {
   // - Camera position
   camera_pos_location = glGetUniformLocation(shader_program, "view_pos");
   
-  // - Light data
+  // - Light data (light1)
   light_position_location = glGetUniformLocation(shader_program, "light.position"); 
   light_ambient_location = glGetUniformLocation(shader_program, "light.ambient"); 
   light_diffuse_location = glGetUniformLocation(shader_program, "light.diffuse"); 
   light_specular_location = glGetUniformLocation(shader_program, "light.specular");
   
+  // - Light data (light2)
+  light2_position_location = glGetUniformLocation(shader_program, "light2.position");
+  light2_ambient_location = glGetUniformLocation(shader_program, "light2.ambient");
+  light2_diffuse_location = glGetUniformLocation(shader_program, "light2.diffuse");
+  light_specular_location = glGetUniformLocation(shader_program, "light2.specular");
+
   // - Material data
   material_ambient_location = glGetUniformLocation(shader_program, "material.ambient"); 
   material_diffuse_location = glGetUniformLocation(shader_program, "material.diffuse"); 
@@ -332,6 +345,11 @@ void render(double currentTime, GLuint *vao) {
   glUniform3fv(light_ambient_location, 1, glm::value_ptr(light_ambient));
   glUniform3fv(light_diffuse_location, 1, glm::value_ptr(light_diffuse));
   glUniform3fv(light_specular_location, 1, glm::value_ptr(light_specular));
+
+  glUniform3fv(light2_position_location, 1, glm::value_ptr(light2_pos));
+  glUniform3fv(light2_ambient_location, 1, glm::value_ptr(light2_ambient));
+  glUniform3fv(light2_diffuse_location, 1, glm::value_ptr(light2_diffuse));
+  glUniform3fv(light2_specular_location, 1, glm::value_ptr(light2_specular));
 
   glUniform3fv(material_ambient_location, 1, glm::value_ptr(material_ambient));
   glUniform3fv(material_diffuse_location, 1, glm::value_ptr(material_diffuse));
