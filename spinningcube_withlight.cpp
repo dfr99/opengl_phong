@@ -323,7 +323,7 @@ void render(double currentTime, GLuint *vao) {
   glUniformMatrix4fv(proj_location, 1, GL_FALSE, glm::value_ptr(proj_matrix));
   
   // Normal matrix: normal vectors to world coordinates
-  normal_matrix = glm::transpose(glm::inverse(glm::mat3(model_matrix)));
+  normal_matrix = glm::inverseTranspose(glm::mat3(model_matrix));
   glUniformMatrix3fv(normal_location, 1, GL_FALSE, glm::value_ptr(normal_matrix));
 
   glUniform3fv(light_position_location, 1, glm::value_ptr(light_pos));
