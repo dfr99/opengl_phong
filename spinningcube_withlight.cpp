@@ -517,7 +517,11 @@ void render(double currentTime,
   model_matrix = glm::mat4(1.f);
 
   model_matrix = glm::rotate(model_matrix,
+<<<<<<< HEAD
                           glm::radians((float)currentTime * 45.0f),
+=======
+                          glm::radians((float)currentTime * 30.0f),
+>>>>>>> b06ace2 (Update spinningcube_withlight.cpp)
                           glm::vec3(0.0f, 1.0f, 0.0f));
 
   model_matrix = glm::rotate(model_matrix,
@@ -659,13 +663,6 @@ void obtenerNormales(GLfloat * normales, const GLfloat vertices[]){
     normales[i] = x;      normales[i+3] = x; normales[i+6] = x;
     normales[i + 1] = y;  normales[i+4] = y; normales[i+7] = y;
     normales[i + 2] = z;  normales[i+5] = z; normales[i+8] = z;
-<<<<<<< HEAD
-    
-    // printf("[%f, ", normales[i]);
-    // printf("%f, ", normales[i + 1]);
-    // printf("%f] \n", normales[i + 2]);
-=======
->>>>>>> 2e866dd (Remove prints)
   }
 
 }
