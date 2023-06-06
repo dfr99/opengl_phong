@@ -21,7 +21,7 @@ int gl_height = 480;
 
 void glfw_window_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow *window);
-void render(double, GLuint *vao);
+void render(double, GLuint *vao, GLuint *pyramidVao);
 void obtenerNormales(GLfloat * normales,const GLfloat vertices[]);
 
 GLuint shader_program = 0; // shader program to set render pipeline
@@ -214,6 +214,45 @@ int main() {
      0.25f,  0.25f, -0.25f  // 3
   };
 
+  const float pyramidScaleFactor = 0.3;
+
+  const GLfloat pyramidVertices[] = {
+    // Front face
+    0.0f, 1.0f, 0.0f,      // Vertex 0
+    -1.0f, -1.0f, 1.0f,    // Vertex 1
+    1.0f, -1.0f, 1.0f,     // Vertex 2
+
+    // Right face
+    0.0f, 1.0f, 0.0f,      // Vertex 3
+    1.0f, -1.0f, 1.0f,     // Vertex 4
+    1.0f, -1.0f, -1.0f,    // Vertex 5
+
+    // Back face
+    0.0f, 1.0f, 0.0f,      // Vertex 6
+    1.0f, -1.0f, -1.0f,    // Vertex 7
+    -1.0f, -1.0f, -1.0f,   // Vertex 8
+
+    // Left face
+    0.0f, 1.0f, 0.0f,      // Vertex 9
+    -1.0f, -1.0f, -1.0f,   // Vertex 10
+    -1.0f, -1.0f, 1.0f,    // Vertex 11
+
+    // Bottom face
+    -1.0f, -1.0f, 1.0f,    // Vertex 12
+    1.0f, -1.0f, 1.0f,     // Vertex 13
+    1.0f, -1.0f, -1.0f,    // Vertex 14
+    -1.0f, -1.0f, -1.0f,   // Vertex 15
+  };
+
+  const GLuint pyramidIndices[] = {
+    0, 1, 2,    // Front face
+    3, 4, 5,    // Right face
+    6, 7, 8,    // Back face
+    9, 10, 11,  // Left face
+    12, 13, 14, // Bottom face
+    12, 14, 15, // Bottom face
+  };
+
   GLfloat normales[sizeof(float)* 108] = {};
 
 // Vertex Buffer Object (for vertex coordinates)
@@ -250,6 +289,23 @@ int main() {
   glBindVertexArray(0);
   glBindVertexArray(1);
 
+  // Pyramid VAO and VBO
+  GLuint pyramidVao, pyramidVbo, pyramidIbo;
+  glGenVertexArrays(1, &pyramidVao);
+  glBindVertexArray(pyramidVao);
+
+  glGenBuffers(1, &pyramidVbo);
+  glBindBuffer(GL_ARRAY_BUFFER, pyramidVbo);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(pyramidVertices), pyramidVertices, GL_STATIC_DRAW);
+
+  glGenBuffers(1, &pyramidIbo);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, pyramidIbo);
+  glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(pyramidIndices), pyramidIndices, GL_STATIC_DRAW);
+
+  // Set the vertex attribute pointers for the pyramid
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+  glEnableVertexAttribArray(0);
+
   // Uniforms
   
   // - Model matrix
@@ -257,7 +313,7 @@ int main() {
   
   // - View matrix
   view_location = glGetUniformLocation(shader_program, "view");
-  
+
   // - Projection matrix
   proj_location = glGetUniformLocation(shader_program, "projection");
 
@@ -290,7 +346,7 @@ int main() {
 
     processInput(window);
 
-    render(glfwGetTime(), &vao);
+    render(glfwGetTime(), &vao, &pyramidVao);
 
     glfwSwapBuffers(window);
 
@@ -302,7 +358,7 @@ int main() {
   return 0;
 }
 
-void render(double currentTime, GLuint *vao) {
+void render(double currentTime, GLuint *vao, GLuint *pyramidVao) {
   float f = (float)currentTime * 0.3f;
 
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -312,7 +368,7 @@ void render(double currentTime, GLuint *vao) {
   glUseProgram(shader_program);
   glBindVertexArray(*vao);
 
-  glm::mat4 model_matrix, view_matrix, proj_matrix;
+  glm::mat4 model_matrix, view_matrix, proj_matrix, pyramid_matrix;
   glm::mat3 normal_matrix;
 
   model_matrix = glm::mat4(1.f);
@@ -359,6 +415,43 @@ void render(double currentTime, GLuint *vao) {
   glUniform3fv(camera_pos_location, 1, glm::value_ptr(camera_pos));
 
   glDrawArrays(GL_TRIANGLES, 0, 36);
+  glBindVertexArray(0);
+
+  // Draw the pyramid
+  model_matrix = glm::mat4(1.f);
+  glm::vec3 pyramid_pos(0.6f,0.0f,0.0f);
+
+  view_matrix = glm::lookAt(                 camera_pos,  // pos
+                            glm::vec3(0.0f, 0.0f, 0.0f),  // target
+                            glm::vec3(0.0f, 1.0f, 0.0f)); // up
+
+  model_matrix = glm::rotate(model_matrix,
+                             glm::radians((float)currentTime * 30.0f),
+                             glm::vec3(0.0f, 1.0f, 0.0f));
+
+  model_matrix = glm::rotate(model_matrix,
+                             glm::radians((float)currentTime * 81.0f),
+                             glm::vec3(1.0f, 0.0f, 0.0f));
+
+  model_matrix = glm::translate(model_matrix, pyramid_pos);
+  model_matrix = glm::scale(model_matrix, glm::vec3(0.125f));
+
+  // Projection
+  proj_matrix = glm::perspective(glm::radians(50.0f),
+                                 (float) gl_width / (float) gl_height,
+                                 0.1f, 1000.0f);
+  
+  glUniformMatrix4fv(view_location, 1, GL_FALSE, glm::value_ptr(view_matrix));
+  glUniformMatrix4fv(model_location, 1, GL_FALSE, glm::value_ptr(model_matrix));
+  glUniformMatrix4fv(proj_location, 1, GL_FALSE, glm::value_ptr(proj_matrix));
+  
+  // Normal matrix: normal vectors to world coordinates
+  normal_matrix = glm::inverseTranspose(glm::mat3(model_matrix));
+  glUniformMatrix3fv(normal_location, 1, GL_FALSE, glm::value_ptr(normal_matrix));
+
+  glBindVertexArray(*pyramidVao);
+  glDrawElements(GL_TRIANGLES, 18, GL_UNSIGNED_INT, 0);
+  glBindVertexArray(0);
 }
 
 void processInput(GLFWwindow *window) {
