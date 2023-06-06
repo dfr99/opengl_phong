@@ -25,7 +25,7 @@ void render(double, GLuint *vao, GLuint *pyramidVao);
 void obtenerNormales(GLfloat * normales,const GLfloat vertices[]);
 
 GLuint shader_program = 0; // shader program to set render pipeline
-GLuint vao = 0; // Vertext Array Object to set input data
+GLuint vao, pyramidVao = 0; // Vertext Array Object to set input data
 GLint model_location, view_location, proj_location, normal_location; // Uniforms for transformation matrices
 GLint light_position_location, light_ambient_location, light_diffuse_location, light_specular_location; // Uniforms for light1 data
 GLint light2_position_location, light2_ambient_location, light2_diffuse_location, light2_specular_location; // Uniforms for light2 data
@@ -290,7 +290,7 @@ int main() {
   glBindVertexArray(1);
 
   // Pyramid VAO and VBO
-  GLuint pyramidVao, pyramidVbo, pyramidIbo;
+  GLuint pyramidVbo, pyramidIbo;
   glGenVertexArrays(1, &pyramidVao);
   glBindVertexArray(pyramidVao);
 
@@ -418,6 +418,7 @@ void render(double currentTime, GLuint *vao, GLuint *pyramidVao) {
   glBindVertexArray(0);
 
   // Draw the pyramid
+  glBindVertexArray(*pyramidVao);
   model_matrix = glm::mat4(1.f);
   glm::vec3 pyramid_pos(0.7f,0.0f,0.0f);
 
@@ -438,7 +439,6 @@ void render(double currentTime, GLuint *vao, GLuint *pyramidVao) {
   normal_matrix = glm::inverseTranspose(glm::mat3(model_matrix));
   glUniformMatrix3fv(normal_location, 1, GL_FALSE, glm::value_ptr(normal_matrix));
 
-  glBindVertexArray(*pyramidVao);
   glDrawElements(GL_TRIANGLES, 18, GL_UNSIGNED_INT, 0);
   glBindVertexArray(0);
 }
