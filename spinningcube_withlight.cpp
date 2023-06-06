@@ -419,11 +419,7 @@ void render(double currentTime, GLuint *vao, GLuint *pyramidVao) {
 
   // Draw the pyramid
   model_matrix = glm::mat4(1.f);
-  glm::vec3 pyramid_pos(0.6f,0.0f,0.0f);
-
-  view_matrix = glm::lookAt(                 camera_pos,  // pos
-                            glm::vec3(0.0f, 0.0f, 0.0f),  // target
-                            glm::vec3(0.0f, 1.0f, 0.0f)); // up
+  glm::vec3 pyramid_pos(0.7f,0.0f,0.0f);
 
   model_matrix = glm::rotate(model_matrix,
                              glm::radians((float)currentTime * 30.0f),
@@ -435,15 +431,8 @@ void render(double currentTime, GLuint *vao, GLuint *pyramidVao) {
 
   model_matrix = glm::translate(model_matrix, pyramid_pos);
   model_matrix = glm::scale(model_matrix, glm::vec3(0.125f));
-
-  // Projection
-  proj_matrix = glm::perspective(glm::radians(50.0f),
-                                 (float) gl_width / (float) gl_height,
-                                 0.1f, 1000.0f);
   
-  glUniformMatrix4fv(view_location, 1, GL_FALSE, glm::value_ptr(view_matrix));
   glUniformMatrix4fv(model_location, 1, GL_FALSE, glm::value_ptr(model_matrix));
-  glUniformMatrix4fv(proj_location, 1, GL_FALSE, glm::value_ptr(proj_matrix));
   
   // Normal matrix: normal vectors to world coordinates
   normal_matrix = glm::inverseTranspose(glm::mat3(model_matrix));
