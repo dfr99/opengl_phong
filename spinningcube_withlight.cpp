@@ -24,7 +24,7 @@ int gl_height = 480;
 
 void glfw_window_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow *window);
-void render(double, GLuint *cubeVao, GLuint *tetrahedronVao, const float tetrahedronScaleFactor, unsigned int diffuseMap);
+void render(double, GLuint *cubeVao, GLuint *tetrahedronVao, const float tetrahedronScaleFactor, unsigned int cubeDiffuseMap, unsigned int tetrahedronDiffuseMap);
 void obtenerNormales(GLfloat * normales, const GLfloat vertices[]);
 unsigned int loadTexture(const char *path);
 
@@ -218,7 +218,7 @@ int main() {
      0.25f,  0.25f, -0.25f  // 3
   };
   
-  GLfloat texCoords[] = {
+  GLfloat cubeTexCoords[] = {
     1.0f, 0.0f, // 1
     1.0f, 1.0f, // 0
     0.0f, 0.0f, // 2
@@ -292,16 +292,16 @@ int main() {
   glEnableVertexAttribArray(1);
 
   // 2: calculo coordenadas de texturas
-  GLuint textCordsBuffer = 0;
-  glGenBuffers(1, &textCordsBuffer);
-  glBindBuffer(GL_ARRAY_BUFFER, textCordsBuffer);
-  glBufferData(GL_ARRAY_BUFFER, sizeof(texCoords), texCoords, GL_STATIC_DRAW);
+  GLuint texCoordsBuffer = 0;
+  glGenBuffers(1, &texCoordsBuffer);
+  glBindBuffer(GL_ARRAY_BUFFER, texCoordsBuffer);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(cubeTexCoords), cubeTexCoords, GL_STATIC_DRAW);
 
   glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, NULL);
   glEnableVertexAttribArray(2);
 
   // carga de la textura que se usará para la luz difusa (Parte tres, mapa difuso):
-  unsigned int diffuseMap = loadTexture("./textures/spongebob.jpg");
+  unsigned int cubeDiffuseMap = loadTexture("./textures/spongebob.jpg");
 
   // Unbind vbo (it was conveniently registered by VertexAttribPointer)
   glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -339,12 +339,33 @@ int main() {
     0.0f, 0.5774f, 0.0f          // Vertex 11
   };
 
-
   const GLuint tetrahedronIndices[] = {
     0, 1, 2,  // Base
     3, 4, 5,  // Side 1
     6, 7, 8,  // Side 2
     9, 10, 11 // Side 3
+  };
+
+  const GLfloat tetrahedronTexCoords[] = {
+    // Base
+    0.5f, 1.0f,   // Vertex 0
+    1.0f, 0.0f,   // Vertex 1
+    0.0f, 0.0f,   // Vertex 2
+
+    // Side 1
+    0.5f, 1.0f,   // Vertex 3
+    1.0f, 0.0f,   // Vertex 4
+    0.0f, 0.0f,   // Vertex 5
+
+    // Side 2
+    0.5f, 1.0f,   // Vertex 6
+    1.0f, 0.0f,   // Vertex 7
+    0.0f, 0.0f,   // Vertex 8
+
+    // Side 3
+    0.5f, 1.0f,   // Vertex 9
+    1.0f, 0.0f,   // Vertex 10
+    0.0f, 0.0f    // Vertex 11
   };
 
   GLfloat tetrahedronNormales[sizeof(float) * 36] = {};
@@ -362,7 +383,7 @@ int main() {
 
   // Bind the VBO and configure the vertex attribute pointers
   glBindBuffer(GL_ARRAY_BUFFER, tetrahedronVbo);
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), NULL);
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
   glEnableVertexAttribArray(0);
 
   // 1: vertex normals (x, y, z)
@@ -375,17 +396,25 @@ int main() {
   glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, NULL);
   glEnableVertexAttribArray(1);
 
-  glBindBuffer(GL_ARRAY_BUFFER, tetrahedronVbo);
-  // note that we update the lamp's position attribute's stride to reflect the updated buffer data
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
-  glEnableVertexAttribArray(0);
+  // 2: calculo coordenadas de texturas
+  GLuint tetrahedronTextCordsBuffer = 0;
+  glGenBuffers(1, &tetrahedronTextCordsBuffer);
+  glBindBuffer(GL_ARRAY_BUFFER, tetrahedronTextCordsBuffer);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(tetrahedronTexCoords), tetrahedronTexCoords, GL_STATIC_DRAW);
 
-  // Bind the EBO
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, tetrahedronEbo);
+  glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, NULL);
+  glEnableVertexAttribArray(2);
 
-  // Unbind the VAO
+  // carga de la textura que se usará para la luz difusa (Parte tres, mapa difuso):
+  unsigned int tetrahedronDiffuseMap = loadTexture("./textures/patrick.jpg");
+
+  // Unbind vbo (it was conveniently registered by VertexAttribPointer)
+  glBindBuffer(GL_ARRAY_BUFFER, 0);
+  glBindBuffer(GL_ARRAY_BUFFER, 1);
+
+  // Unbind cubeVao
   glBindVertexArray(0);
-  glBindVertexArray(1);
+  glBindVertexArray(1);;
 
   // Uniforms
   
@@ -427,7 +456,7 @@ int main() {
 
     processInput(window);
 
-    render(glfwGetTime(), &cubeVao, &tetrahedronVao, tetrahedronScaleFactor, diffuseMap);
+    render(glfwGetTime(), &cubeVao, &tetrahedronVao, tetrahedronScaleFactor, cubeDiffuseMap, tetrahedronDiffuseMap);
 
     glfwSwapBuffers(window);
 
@@ -439,7 +468,13 @@ int main() {
   return 0;
 }
 
-void render(double currentTime, GLuint *cubeVao, GLuint *tetrahedronVao, const float tetrahedronScaleFactor, unsigned int diffuseMap) {
+void render(double currentTime,
+            GLuint *cubeVao,
+            GLuint *tetrahedronVao,
+            const float tetrahedronScaleFactor,
+            unsigned int cubeDiffuseMap,
+            unsigned int tetrahedronDiffuseMap) {
+
   float f = (float)currentTime * 0.3f;
 
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -497,7 +532,7 @@ void render(double currentTime, GLuint *cubeVao, GLuint *tetrahedronVao, const f
 
   // bind diffuse map
   glActiveTexture(GL_TEXTURE0);
-  glBindTexture(GL_TEXTURE_2D, diffuseMap);
+  glBindTexture(GL_TEXTURE_2D, cubeDiffuseMap);
 
   glDrawArrays(GL_TRIANGLES, 0, 36);
   glBindVertexArray(0);
@@ -529,6 +564,10 @@ void render(double currentTime, GLuint *cubeVao, GLuint *tetrahedronVao, const f
   // Normal matrix: normal vectors to world coordinates
   normal_matrix = glm::inverseTranspose(glm::mat3(model_matrix));
   glUniformMatrix3fv(normal_location, 1, GL_FALSE, glm::value_ptr(normal_matrix));
+
+  // bind diffuse map
+  glActiveTexture(GL_TEXTURE1);
+  glBindTexture(GL_TEXTURE_2D, tetrahedronDiffuseMap);
 
   glDrawArrays(GL_TRIANGLES, 0, 12);
   glBindVertexArray(0);
