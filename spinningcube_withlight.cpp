@@ -5,6 +5,10 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <stdio.h>
+#include <filesystem>
+
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
 
 // GLM library to deal with matrix operations
 #include <glm/glm.hpp>
@@ -13,7 +17,6 @@
 #include <glm/gtc/matrix_inverse.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-
 #include "textfile_ALT.h"
 
 int gl_width = 640;
@@ -21,8 +24,9 @@ int gl_height = 480;
 
 void glfw_window_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow *window);
-void render(double, GLuint *cubeVao, GLuint *tetrahedronVao, const float tetrahedronScaleFactor);
+void render(double, GLuint *cubeVao, GLuint *tetrahedronVao, const float tetrahedronScaleFactor, unsigned int diffuseMap);
 void obtenerNormales(GLfloat * normales, const GLfloat vertices[]);
+unsigned int loadTexture(const char *path);
 
 GLuint shader_program = 0; // shader program to set render pipeline
 GLuint cubeVao, tetrahedronVao = 0; // Vertext Array Object to set input data
@@ -213,6 +217,56 @@ int main() {
     -0.25f,  0.25f,  0.25f, // 7
      0.25f,  0.25f, -0.25f  // 3
   };
+  
+  GLfloat texCoords[] = {
+    1.0f, 0.0f, // 1
+    1.0f, 1.0f, // 0
+    0.0f, 0.0f, // 2
+
+    0.0f, 1.0f, // 3
+    0.0f, 0.0f, // 2
+    1.0f, 1.0f, // 0
+
+    1.0f, 0.0f, // 2
+    1.0f, 1.0f, // 3
+    0.0f, 0.0f, // 5
+
+    0.0f, 1.0f, // 4
+    0.0f, 0.0f, // 5
+    1.0f, 1.0f, // 3
+
+    1.0f, 0.0f, // 5
+    1.0f, 1.0f, // 4
+    0.0f, 0.0f, // 6
+
+    0.0f, 1.0f, // 7
+    0.0f, 0.0f, // 6
+    1.0f, 1.0f, // 4
+
+    1.0f, 0.0f, // 6
+    1.0f, 1.0f, // 7
+    0.0f, 0.0f, // 1
+
+    0.0f, 1.0f, // 0
+    0.0f, 0.0f, // 1
+    1.0f, 1.0f, // 7
+
+    1.0f, 0.0f, // 2
+    1.0f, 1.0f, // 5
+    0.0f, 0.0f, // 1
+
+    0.0f, 1.0f, // 6
+    0.0f, 0.0f, // 1
+    1.0f, 1.0f, // 5
+
+    1.0f, 0.0f, // 4
+    1.0f, 1.0f, // 3
+    0.0f, 0.0f, // 7
+
+    0.0f, 1.0f, // 0
+    0.0f, 0.0f, // 7
+    1.0f, 1.0f  // 3
+  };
 
   GLfloat normales[sizeof(float) * 108] = {};
 
@@ -237,10 +291,17 @@ int main() {
   glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, NULL);
   glEnableVertexAttribArray(1);
 
-  glBindBuffer(GL_ARRAY_BUFFER, vbo);
-  // note that we update the lamp's position attribute's stride to reflect the updated buffer data
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
-  glEnableVertexAttribArray(0);
+  // 2: calculo coordenadas de texturas
+  GLuint textCordsBuffer = 0;
+  glGenBuffers(1, &textCordsBuffer);
+  glBindBuffer(GL_ARRAY_BUFFER, textCordsBuffer);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(texCoords), texCoords, GL_STATIC_DRAW);
+
+  glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, NULL);
+  glEnableVertexAttribArray(2);
+
+  // carga de la textura que se usará para la luz difusa (Parte tres, mapa difuso):
+  unsigned int diffuseMap = loadTexture("./textures/spongebob.jpg");
 
   // Unbind vbo (it was conveniently registered by VertexAttribPointer)
   glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -366,7 +427,7 @@ int main() {
 
     processInput(window);
 
-    render(glfwGetTime(), &cubeVao, &tetrahedronVao, tetrahedronScaleFactor);
+    render(glfwGetTime(), &cubeVao, &tetrahedronVao, tetrahedronScaleFactor, diffuseMap);
 
     glfwSwapBuffers(window);
 
@@ -378,7 +439,7 @@ int main() {
   return 0;
 }
 
-void render(double currentTime, GLuint *cubeVao, GLuint *tetrahedronVao, const float tetrahedronScaleFactor) {
+void render(double currentTime, GLuint *cubeVao, GLuint *tetrahedronVao, const float tetrahedronScaleFactor, unsigned int diffuseMap) {
   float f = (float)currentTime * 0.3f;
 
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -433,6 +494,10 @@ void render(double currentTime, GLuint *cubeVao, GLuint *tetrahedronVao, const f
   glUniform1f(material_shininess_location, material_shininess);
 
   glUniform3fv(camera_pos_location, 1, glm::value_ptr(camera_pos));
+
+  // bind diffuse map
+  glActiveTexture(GL_TEXTURE0);
+  glBindTexture(GL_TEXTURE_2D, diffuseMap);
 
   glDrawArrays(GL_TRIANGLES, 0, 36);
   glBindVertexArray(0);
@@ -508,4 +573,42 @@ void obtenerNormales(GLfloat * normales, const GLfloat vertices[]){
     // printf("%f] \n", normales[i + 2]);
   }
 
+}
+
+// utility function for loading a 2D texture from file
+// ---------------------------------------------------
+unsigned int loadTexture(char const * path){
+    unsigned int textureID;
+    glGenTextures(1, &textureID);
+    
+    int width, height, nrComponents;
+    unsigned char *data = stbi_load(path, &width, &height, &nrComponents, 0);
+    if (data)
+    {
+        GLenum format;
+        if (nrComponents == 1)
+            format = GL_RED;
+        else if (nrComponents == 3)
+            format = GL_RGB;
+        else if (nrComponents == 4)
+            format = GL_RGBA;
+
+        glBindTexture(GL_TEXTURE_2D, textureID);
+        glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+        stbi_image_free(data);
+    }
+    else
+    {
+        fprintf(stderr, "Texture failed to load at path: " );
+        stbi_image_free(data);
+    }
+
+    return textureID;
 }
