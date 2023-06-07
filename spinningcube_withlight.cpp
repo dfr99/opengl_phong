@@ -21,11 +21,11 @@ int gl_height = 480;
 
 void glfw_window_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow *window);
-void render(double, GLuint *vao, GLuint *tetrahedronVao, const float tetrahedronScaleFactor);
+void render(double, GLuint *cubeVao, GLuint *tetrahedronVao, const float tetrahedronScaleFactor);
 void obtenerNormales(GLfloat * normales,const GLfloat vertices[]);
 
 GLuint shader_program = 0; // shader program to set render pipeline
-GLuint vao, tetrahedronVao = 0; // Vertext Array Object to set input data
+GLuint cubeVao, tetrahedronVao = 0; // Vertext Array Object to set input data
 GLint model_location, view_location, proj_location, normal_location; // Uniforms for transformation matrices
 GLint light_position_location, light_ambient_location, light_diffuse_location, light_specular_location; // Uniforms for light1 data
 GLint light2_position_location, light2_ambient_location, light2_diffuse_location, light2_specular_location; // Uniforms for light2 data
@@ -152,8 +152,8 @@ int main() {
   glDeleteShader(fs);
 
   // Vertex Array Object
-  glGenVertexArrays(1, &vao);
-  glBindVertexArray(vao);
+  glGenVertexArrays(1, &cubeVao);
+  glBindVertexArray(cubeVao);
 
   // Cube to be rendered
   //
@@ -214,39 +214,7 @@ int main() {
      0.25f,  0.25f, -0.25f  // 3
   };
 
-  const float tetrahedronScaleFactor = 0.3;
-
-  const GLfloat tetrahedronVertices[] = {
-    // Base
-    -0.5f, -0.2887f, -0.2887f,   // Vertex 0
-    0.5f, -0.2887f, -0.2887f,    // Vertex 1
-    0.0f, -0.2887f, 0.5774f,     // Vertex 2
-
-    // Side 1
-    -0.5f, -0.2887f, -0.2887f,   // Vertex 3
-    0.0f, -0.2887f, 0.5774f,     // Vertex 4
-    0.0f, 0.5774f, 0.0f,         // Vertex 5
-
-    // Side 2
-    0.5f, -0.2887f, -0.2887f,    // Vertex 6
-    -0.5f, -0.2887f, -0.2887f,   // Vertex 7
-    0.0f, 0.5774f, 0.0f,         // Vertex 8
-
-    // Side 3
-    0.0f, -0.2887f, 0.5774f,     // Vertex 9
-    0.5f, -0.2887f, -0.2887f,    // Vertex 10
-    0.0f, 0.5774f, 0.0f          // Vertex 11
-  };
-
-
-  const GLuint tetrahedronIndices[] = {
-    0, 1, 2,  // Base
-    3, 4, 5,  // Side 1
-    6, 7, 8,  // Side 2
-    9, 10, 11 // Side 3
-};
-
-  GLfloat normales[sizeof(float)* 108] = {};
+  GLfloat normales[sizeof(float) * 108] = {};
 
 // Vertex Buffer Object (for vertex coordinates)
   GLuint vbo = 0;
@@ -278,7 +246,7 @@ int main() {
   glBindBuffer(GL_ARRAY_BUFFER, 0);
   glBindBuffer(GL_ARRAY_BUFFER, 1);
 
-  // Unbind vao
+  // Unbind cubeVao
   glBindVertexArray(0);
   glBindVertexArray(1);
 
@@ -286,8 +254,42 @@ int main() {
   glGenVertexArrays(1, &tetrahedronVao);
   glBindVertexArray(tetrahedronVao);
 
+  const float tetrahedronScaleFactor = 0.3;
+
+  const GLfloat tetrahedronVertices[] = {
+    // Base
+    -0.5f, -0.2887f, -0.2887f,   // Vertex 0
+    0.5f, -0.2887f, -0.2887f,    // Vertex 1
+    0.0f, -0.2887f, 0.5774f,     // Vertex 2
+
+    // Side 1
+    -0.5f, -0.2887f, -0.2887f,   // Vertex 3
+    0.0f, -0.2887f, 0.5774f,     // Vertex 4
+    0.0f, 0.5774f, 0.0f,         // Vertex 5
+
+    // Side 2
+    0.5f, -0.2887f, -0.2887f,    // Vertex 6
+    -0.5f, -0.2887f, -0.2887f,   // Vertex 7
+    0.0f, 0.5774f, 0.0f,         // Vertex 8
+
+    // Side 3
+    0.0f, -0.2887f, 0.5774f,     // Vertex 9
+    0.5f, -0.2887f, -0.2887f,    // Vertex 10
+    0.0f, 0.5774f, 0.0f          // Vertex 11
+  };
+
+
+  const GLuint tetrahedronIndices[] = {
+    0, 1, 2,  // Base
+    3, 4, 5,  // Side 1
+    6, 7, 8,  // Side 2
+    9, 10, 11 // Side 3
+  };
+
+  GLfloat tetrahedronNormales[sizeof(float) * 36] = {};
+
   // Tetrahedron VBO and EBO
-  GLuint tetrahedronVbo, tetrahedronEbo;
+  GLuint tetrahedronVbo, tetrahedronEbo = 0;
   glGenBuffers(1, &tetrahedronVbo);
   glGenBuffers(1, &tetrahedronEbo);
 
@@ -302,11 +304,27 @@ int main() {
   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), NULL);
   glEnableVertexAttribArray(0);
 
+  // 1: vertex normals (x, y, z)
+  obtenerNormales(normales, tetrahedronVertices);
+  GLuint tetrahedronNormalesBuffer = 0;
+  glGenBuffers(1, &tetrahedronNormalesBuffer);
+  glBindBuffer(GL_ARRAY_BUFFER, tetrahedronNormalesBuffer);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(tetrahedronNormales), tetrahedronNormales, GL_STATIC_DRAW);
+
+  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+  glEnableVertexAttribArray(1);
+
+  glBindBuffer(GL_ARRAY_BUFFER, tetrahedronVbo);
+  // note that we update the lamp's position attribute's stride to reflect the updated buffer data
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+  glEnableVertexAttribArray(0);
+
   // Bind the EBO
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, tetrahedronEbo);
 
   // Unbind the VAO
   glBindVertexArray(0);
+  glBindVertexArray(1);
 
   // Uniforms
   
@@ -348,7 +366,7 @@ int main() {
 
     processInput(window);
 
-    render(glfwGetTime(), &vao, &tetrahedronVao, tetrahedronScaleFactor);
+    render(glfwGetTime(), &cubeVao, &tetrahedronVao, tetrahedronScaleFactor);
 
     glfwSwapBuffers(window);
 
@@ -360,7 +378,7 @@ int main() {
   return 0;
 }
 
-void render(double currentTime, GLuint *vao, GLuint *tetrahedronVao, const float tetrahedronScaleFactor) {
+void render(double currentTime, GLuint *cubeVao, GLuint *tetrahedronVao, const float tetrahedronScaleFactor) {
   float f = (float)currentTime * 0.3f;
 
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -368,7 +386,7 @@ void render(double currentTime, GLuint *vao, GLuint *tetrahedronVao, const float
   glViewport(0, 0, gl_width, gl_height);
 
   glUseProgram(shader_program);
-  glBindVertexArray(*vao);
+  glBindVertexArray(*cubeVao);
 
   glm::mat4 model_matrix, view_matrix, proj_matrix, pyramid_matrix;
   glm::mat3 normal_matrix;
@@ -390,7 +408,7 @@ void render(double currentTime, GLuint *vao, GLuint *tetrahedronVao, const float
   proj_matrix = glm::perspective(glm::radians(50.0f),
                                  (float) gl_width / (float) gl_height,
                                  0.1f, 1000.0f);
-  
+
   glUniformMatrix4fv(view_location, 1, GL_FALSE, glm::value_ptr(view_matrix));
   glUniformMatrix4fv(model_location, 1, GL_FALSE, glm::value_ptr(model_matrix));
   glUniformMatrix4fv(proj_location, 1, GL_FALSE, glm::value_ptr(proj_matrix));
@@ -420,6 +438,7 @@ void render(double currentTime, GLuint *vao, GLuint *tetrahedronVao, const float
   glBindVertexArray(0);
 
   // Draw the pyramid
+  glUseProgram(shader_program);
   glBindVertexArray(*tetrahedronVao);
   model_matrix = glm::mat4(1.f);
   glm::vec3 pyramid_pos(0.7f,0.0f,0.0f);
@@ -432,10 +451,16 @@ void render(double currentTime, GLuint *vao, GLuint *tetrahedronVao, const float
                              glm::radians((float)currentTime * 40.0f),
                              glm::vec3(1.0f, 0.0f, 0.0f));
 
+  // Projection
+  proj_matrix = glm::perspective(glm::radians(30.0f),
+                                 (float) gl_width / (float) gl_height,
+                                 0.1f, 1000.0f);
+
   model_matrix = glm::translate(model_matrix, pyramid_pos);
   model_matrix = glm::scale(model_matrix, glm::vec3(tetrahedronScaleFactor));
-  
+
   glUniformMatrix4fv(model_location, 1, GL_FALSE, glm::value_ptr(model_matrix));
+  glUniformMatrix4fv(proj_location, 1, GL_FALSE, glm::value_ptr(proj_matrix));
   
   // Normal matrix: normal vectors to world coordinates
   normal_matrix = glm::inverseTranspose(glm::mat3(model_matrix));
