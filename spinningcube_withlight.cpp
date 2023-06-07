@@ -24,7 +24,14 @@ int gl_height = 480;
 
 void glfw_window_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow *window);
-void render(double, GLuint *cubeVao, GLuint *tetrahedronVao, const float tetrahedronScaleFactor, unsigned int cubeDiffuseMap, unsigned int tetrahedronDiffuseMap);
+void render(double, 
+            GLuint *cubeVao,
+            GLuint *tetrahedronVao,
+            const float tetrahedronScaleFactor,
+            unsigned int cubeDiffuseMap,
+            unsigned int tetrahedronDiffuseMap,
+            unsigned int cubeSpecularMap,
+            unsigned int tetrahedronSpecularMap);
 void obtenerNormales(GLfloat * normales, const GLfloat vertices[]);
 unsigned int loadTexture(const char *path);
 
@@ -58,7 +65,7 @@ glm::vec3 light2_specular(0.5f, 0.5f, 0.5f);
 // Material
 glm::vec3 material_ambient(1.0f, 0.5f, 0.31f);
 const GLfloat material_diffuse = 0;
-glm::vec3 material_specular(0.5f, 0.5f, 0.5f);
+const GLfloat material_specular = 1;
 const GLfloat material_shininess = 32.0f;
 
 int main() {
@@ -300,8 +307,11 @@ int main() {
   glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, NULL);
   glEnableVertexAttribArray(2);
 
-  // load cube texture
+  // load cube texture for diffuse light
   unsigned int cubeDiffuseMap = loadTexture("./textures/spongebob.jpg");
+
+  // load cube texture for specular light
+  unsigned int cubeSpecularMap = loadTexture("./textures/solid_black.png");
 
   // Unbind vbo (it was conveniently registered by VertexAttribPointer)
   glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -408,13 +418,16 @@ int main() {
   // load tetrahedron texture
   unsigned int tetrahedronDiffuseMap = loadTexture("./textures/patrick.jpg");
 
+  // load cube texture for specular light
+  unsigned int tetrahedronSpecularMap = loadTexture("./textures/solid_black.png");
+
   // Unbind vbo (it was conveniently registered by VertexAttribPointer)
   glBindBuffer(GL_ARRAY_BUFFER, 0);
   glBindBuffer(GL_ARRAY_BUFFER, 1);
 
   // Unbind cubeVao
   glBindVertexArray(0);
-  glBindVertexArray(1);;
+  glBindVertexArray(1);
 
   // Uniforms
   
@@ -456,7 +469,14 @@ int main() {
 
     processInput(window);
 
-    render(glfwGetTime(), &cubeVao, &tetrahedronVao, tetrahedronScaleFactor, cubeDiffuseMap, tetrahedronDiffuseMap);
+    render(glfwGetTime(), 
+           &cubeVao,
+           &tetrahedronVao,
+           tetrahedronScaleFactor,
+           cubeDiffuseMap, 
+           tetrahedronDiffuseMap,
+           cubeSpecularMap,
+           tetrahedronSpecularMap);
 
     glfwSwapBuffers(window);
 
@@ -473,7 +493,9 @@ void render(double currentTime,
             GLuint *tetrahedronVao,
             const float tetrahedronScaleFactor,
             unsigned int cubeDiffuseMap,
-            unsigned int tetrahedronDiffuseMap) {
+            unsigned int tetrahedronDiffuseMap,
+            unsigned int cubeSpecularMap,
+            unsigned int tetrahedronSpecularMap) {
 
   float f = (float)currentTime * 0.3f;
 
@@ -525,7 +547,7 @@ void render(double currentTime,
 
   glUniform3fv(material_ambient_location, 1, glm::value_ptr(material_ambient));
   glUniform1f(material_diffuse_location, material_diffuse);
-  glUniform3fv(material_specular_location, 1, glm::value_ptr(material_specular));
+  glUniform1f(material_specular_location, material_specular);
   glUniform1f(material_shininess_location, material_shininess);
 
   glUniform3fv(camera_pos_location, 1, glm::value_ptr(camera_pos));
@@ -533,6 +555,10 @@ void render(double currentTime,
   // bind diffuse map
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, cubeDiffuseMap);
+
+  // bind specular map
+  glActiveTexture(GL_TEXTURE1);
+  glBindTexture(GL_TEXTURE_2D, cubeSpecularMap);
 
   glDrawArrays(GL_TRIANGLES, 0, 36);
   glBindVertexArray(0);
@@ -565,9 +591,16 @@ void render(double currentTime,
   normal_matrix = glm::inverseTranspose(glm::mat3(model_matrix));
   glUniformMatrix3fv(normal_location, 1, GL_FALSE, glm::value_ptr(normal_matrix));
 
+  glUniform1i(material_diffuse_location, material_diffuse);
+  glUniform1i(material_specular_location, material_specular);
+
   // bind diffuse map
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, tetrahedronDiffuseMap);
+
+  // bind diffuse map
+  glActiveTexture(GL_TEXTURE1);
+  glBindTexture(GL_TEXTURE_2D, tetrahedronSpecularMap);
 
   glDrawArrays(GL_TRIANGLES, 0, 12);
   glBindVertexArray(0);

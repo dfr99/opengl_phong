@@ -2,7 +2,7 @@
 
 struct Material {
   sampler2D diffuse;
-  vec3 specular;
+  sampler2D specular;
   float shininess;
 };
 
@@ -49,12 +49,12 @@ void main() {
   // Especular -> light1
   vec3 reflect_dir = reflect(-light_dir, vs_normal);
   float spec = pow(max(dot(view_dir, reflect_dir), 0.0), material.shininess);
-  vec3 specular = light.specular * (spec * material.specular);
+  vec3 specular = light.specular * (spec * vec3(texture(material.specular, vs_tex_coord)));
 
   // Especular -> light2
   vec3 reflect2_dir = reflect(-light2_dir, vs_normal);
   float spec2 = pow(max(dot(view_dir, reflect2_dir), 0.0), material.shininess);
-  vec3 specular2 = light2.specular * (spec2 * material.specular);
+  vec3 specular2 = light2.specular * (spec2 * vec3(texture(material.specular, vs_tex_coord)));
 
   vec3 result = ambient + ambient2 + diffuse + diffuse2 + specular + specular2;
   frag_col = vec4(result, 1.0);
