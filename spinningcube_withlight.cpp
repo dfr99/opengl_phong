@@ -22,7 +22,7 @@ int gl_height = 480;
 void glfw_window_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow *window);
 void render(double, GLuint *cubeVao, GLuint *tetrahedronVao, const float tetrahedronScaleFactor);
-void obtenerNormales(GLfloat * normales,const GLfloat vertices[]);
+void obtenerNormales(GLfloat * normales, const GLfloat vertices[]);
 
 GLuint shader_program = 0; // shader program to set render pipeline
 GLuint cubeVao, tetrahedronVao = 0; // Vertext Array Object to set input data
@@ -39,17 +39,17 @@ const char *fragmentFileName = "spinningcube_withlight_fs.glsl";
 // Camera
 glm::vec3 camera_pos(0.0f, 0.0f, 3.0f);
 
-// Lighting (light1)
-glm::vec3 light_pos(1.2f, 1.0f, 2.0f);
+// Lighting (light)
+glm::vec3 light_pos(-0.25f, 0.0f, 1.0f);
 glm::vec3 light_ambient(0.2f, 0.2f, 0.2f);
-glm::vec3 light_diffuse(0.5f, 0.5f, 0.5f);
-glm::vec3 light_specular(1.0f, 1.0f, 1.0f);
+glm::vec3 light_diffuse(0.6f, 0.6f, 0.6f);
+glm::vec3 light_specular(0.5f, 0.5f, 0.5f);
 
 // Lighting (light2)
-glm::vec3 light2_pos(1.0f, 1.0f, 2.0f);
+glm::vec3 light2_pos(0.25f, 0.0f, 1.0f);
 glm::vec3 light2_ambient(0.2f, 0.2f, 0.2f);
-glm::vec3 light2_diffuse(0.5f, 0.5f, 0.5f);
-glm::vec3 light2_specular(1.0f, 1.0f, 1.0f);
+glm::vec3 light2_diffuse(0.6f, 0.6f, 0.6f);
+glm::vec3 light2_specular(0.5f, 0.5f, 0.5f);
 
 // Material
 glm::vec3 material_ambient(1.0f, 0.5f, 0.31f);
@@ -69,7 +69,7 @@ int main() {
   //  glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
   //  glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-  GLFWwindow* window = glfwCreateWindow(gl_width, gl_height, "My spinning cube", NULL, NULL);
+  GLFWwindow* window = glfwCreateWindow(gl_width, gl_height, "OpenGL Phong", NULL, NULL);
   if (!window) {
     fprintf(stderr, "ERROR: could not open window with GLFW3\n");
     glfwTerminate();
@@ -305,7 +305,7 @@ int main() {
   glEnableVertexAttribArray(0);
 
   // 1: vertex normals (x, y, z)
-  obtenerNormales(normales, tetrahedronVertices);
+  obtenerNormales(tetrahedronNormales, tetrahedronVertices);
   GLuint tetrahedronNormalesBuffer = 0;
   glGenBuffers(1, &tetrahedronNormalesBuffer);
   glBindBuffer(GL_ARRAY_BUFFER, tetrahedronNormalesBuffer);
@@ -397,11 +397,11 @@ void render(double currentTime, GLuint *cubeVao, GLuint *tetrahedronVao, const f
                             glm::vec3(0.0f, 1.0f, 0.0f)); // up
 
   model_matrix = glm::rotate(model_matrix,
-                          glm::radians((float)currentTime * 30.0f),
+                          glm::radians((float)currentTime * 45.0f),
                           glm::vec3(0.0f, 1.0f, 0.0f));
 
   model_matrix = glm::rotate(model_matrix,
-                            glm::radians((float)currentTime * 40.0f),
+                            glm::radians((float)currentTime * 81.0f),
                             glm::vec3(1.0f, 0.0f, 0.0f));
 
   // Projection
@@ -438,7 +438,6 @@ void render(double currentTime, GLuint *cubeVao, GLuint *tetrahedronVao, const f
   glBindVertexArray(0);
 
   // Draw the pyramid
-  glUseProgram(shader_program);
   glBindVertexArray(*tetrahedronVao);
   model_matrix = glm::mat4(1.f);
   glm::vec3 pyramid_pos(0.7f,0.0f,0.0f);
@@ -466,7 +465,7 @@ void render(double currentTime, GLuint *cubeVao, GLuint *tetrahedronVao, const f
   normal_matrix = glm::inverseTranspose(glm::mat3(model_matrix));
   glUniformMatrix3fv(normal_location, 1, GL_FALSE, glm::value_ptr(normal_matrix));
 
-  glDrawElements(GL_TRIANGLES, 12, GL_UNSIGNED_INT, 0);
+  glDrawArrays(GL_TRIANGLES, 0, 12);
   glBindVertexArray(0);
 }
 
@@ -482,9 +481,9 @@ void glfw_window_size_callback(GLFWwindow* window, int width, int height) {
   printf("New viewport: (width: %d, height: %d)\n", width, height);
 }
 
-void obtenerNormales(GLfloat * normales,const GLfloat vertices[]){
+void obtenerNormales(GLfloat * normales, const GLfloat vertices[]){
 
-  for(int i = 0; i < 108; i+= 9){
+  for (int i = 0; i < 108; i += 9) {
 
     GLfloat v1[] = {vertices[i], vertices[i+1], vertices[i+2]};
     GLfloat v2[] = {vertices[i+3], vertices[i+4], vertices[i+5]};
