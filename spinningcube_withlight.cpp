@@ -300,7 +300,7 @@ int main() {
   glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, NULL);
   glEnableVertexAttribArray(2);
 
-  // carga de la textura que se usará para la luz difusa (Parte tres, mapa difuso):
+  // load cube texture
   unsigned int cubeDiffuseMap = loadTexture("./textures/spongebob.jpg");
 
   // Unbind vbo (it was conveniently registered by VertexAttribPointer)
@@ -405,7 +405,7 @@ int main() {
   glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, NULL);
   glEnableVertexAttribArray(2);
 
-  // carga de la textura que se usará para la luz difusa (Parte tres, mapa difuso):
+  // load tetrahedron texture
   unsigned int tetrahedronDiffuseMap = loadTexture("./textures/patrick.jpg");
 
   // Unbind vbo (it was conveniently registered by VertexAttribPointer)
@@ -566,7 +566,7 @@ void render(double currentTime,
   glUniformMatrix3fv(normal_location, 1, GL_FALSE, glm::value_ptr(normal_matrix));
 
   // bind diffuse map
-  glActiveTexture(GL_TEXTURE1);
+  glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, tetrahedronDiffuseMap);
 
   glDrawArrays(GL_TRIANGLES, 0, 12);
