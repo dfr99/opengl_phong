@@ -655,17 +655,17 @@ void obtenerNormales(GLfloat * normales, const GLfloat vertices[]){
     GLfloat x = U[1] * V[2] - U[2] * V[1];
     GLfloat y = U[2] * V[0] - U[0] * V[2];
     GLfloat z = U[0] * V[1] - U[1] * V[0];
-    //printf("[%f, ", x);
-    //printf("%f, ", y);
-    //printf("%f] \n", z);
     
     normales[i] = x;      normales[i+3] = x; normales[i+6] = x;
     normales[i + 1] = y;  normales[i+4] = y; normales[i+7] = y;
     normales[i + 2] = z;  normales[i+5] = z; normales[i+8] = z;
+<<<<<<< HEAD
     
     // printf("[%f, ", normales[i]);
     // printf("%f, ", normales[i + 1]);
     // printf("%f] \n", normales[i + 2]);
+=======
+>>>>>>> 2e866dd (Remove prints)
   }
 
 }
