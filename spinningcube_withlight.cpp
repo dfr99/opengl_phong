@@ -31,7 +31,8 @@ void render(double,
             unsigned int cubeDiffuseMap,
             unsigned int tetrahedronDiffuseMap,
             unsigned int cubeSpecularMap,
-            unsigned int tetrahedronSpecularMap);
+            unsigned int tetrahedronSpecularMap,
+            int activeCameraIndex);
 void obtenerNormales(GLfloat * normales, const GLfloat vertices[]);
 unsigned int loadTexture(const char *path);
 
@@ -42,13 +43,15 @@ GLint light_position_location, light_ambient_location, light_diffuse_location, l
 GLint light2_position_location, light2_ambient_location, light2_diffuse_location, light2_specular_location; // Uniforms for light2 data
 GLint material_ambient_location, material_diffuse_location, material_specular_location, material_shininess_location; // Uniforms for material matrices
 GLint camera_pos_location;
+int activeCameraIndex = 0;
 
 // Shader names
 const char *vertexFileName = "spinningcube_withlight_vs.glsl";
 const char *fragmentFileName = "spinningcube_withlight_fs.glsl";
 
 // Camera
-glm::vec3 camera_pos(0.0f, 0.0f, 3.0f);
+glm::vec3 camera1_pos(0.0f, 0.0f, 3.0f);
+glm::vec3 camera2_pos(1.0f, 0.4f, 8.0f);
 
 // Lighting (light)
 glm::vec3 light_pos(-0.25f, 0.0f, 1.0f);
@@ -445,7 +448,7 @@ int main() {
   
   // - Camera position
   camera_pos_location = glGetUniformLocation(shader_program, "view_pos");
-  
+
   // - Light data (light1)
   light_position_location = glGetUniformLocation(shader_program, "light.position"); 
   light_ambient_location = glGetUniformLocation(shader_program, "light.ambient"); 
@@ -476,7 +479,8 @@ int main() {
            cubeDiffuseMap, 
            tetrahedronDiffuseMap,
            cubeSpecularMap,
-           tetrahedronSpecularMap);
+           tetrahedronSpecularMap,
+           activeCameraIndex);
 
     glfwSwapBuffers(window);
 
@@ -495,7 +499,8 @@ void render(double currentTime,
             unsigned int cubeDiffuseMap,
             unsigned int tetrahedronDiffuseMap,
             unsigned int cubeSpecularMap,
-            unsigned int tetrahedronSpecularMap) {
+            unsigned int tetrahedronSpecularMap,
+            int activeCameraIndex) {
 
   float f = (float)currentTime * 0.3f;
 
@@ -506,13 +511,10 @@ void render(double currentTime,
   glUseProgram(shader_program);
   glBindVertexArray(*cubeVao);
 
-  glm::mat4 model_matrix, view_matrix, proj_matrix, pyramid_matrix;
+  glm::mat4 model_matrix, view1_matrix, proj1_matrix, view2_matrix, proj2_matrix;
   glm::mat3 normal_matrix;
 
   model_matrix = glm::mat4(1.f);
-  view_matrix = glm::lookAt(                 camera_pos,  // pos
-                            glm::vec3(0.0f, 0.0f, 0.0f),  // target
-                            glm::vec3(0.0f, 1.0f, 0.0f)); // up
 
   model_matrix = glm::rotate(model_matrix,
                           glm::radians((float)currentTime * 45.0f),
@@ -522,14 +524,37 @@ void render(double currentTime,
                             glm::radians((float)currentTime * 81.0f),
                             glm::vec3(1.0f, 0.0f, 0.0f));
 
-  // Projection
-  proj_matrix = glm::perspective(glm::radians(50.0f),
+  // Camera1 PoV
+  view1_matrix = glm::lookAt(camera1_pos,                  // pos
+                             glm::vec3(0.0f, 0.0f, 0.0f),  // target
+                             glm::vec3(0.0f, 1.0f, 0.0f)); // up
+
+  // Projection 1
+  proj1_matrix = glm::perspective(glm::radians(50.0f),
                                  (float) gl_width / (float) gl_height,
                                  0.1f, 1000.0f);
 
-  glUniformMatrix4fv(view_location, 1, GL_FALSE, glm::value_ptr(view_matrix));
+  // Camera1 PoV
+  view2_matrix = glm::lookAt(camera2_pos,                  // pos
+                             glm::vec3(0.7f, 0.0f, 0.0f),  // target
+                             glm::vec3(0.0f, 1.0f, 0.0f)); // up
+
+  // Projection 2
+  proj2_matrix = glm::perspective(glm::radians(50.0f),
+                                 (float) gl_width / (float) gl_height,
+                                 0.1f, 1000.0f);
+
+  if (activeCameraIndex == 0) {
+    glUniformMatrix4fv(view_location, 1, GL_FALSE, glm::value_ptr(view1_matrix));
+    glUniformMatrix4fv(proj_location, 1, GL_FALSE, glm::value_ptr(proj1_matrix));
+    glUniform3fv(camera_pos_location, 1, glm::value_ptr(camera1_pos));
+  } else if (activeCameraIndex == 1) {
+    glUniformMatrix4fv(view_location, 1, GL_FALSE, glm::value_ptr(view2_matrix));
+    glUniformMatrix4fv(proj_location, 1, GL_FALSE, glm::value_ptr(proj2_matrix));
+    glUniform3fv(camera_pos_location, 1, glm::value_ptr(camera2_pos));
+  }
+
   glUniformMatrix4fv(model_location, 1, GL_FALSE, glm::value_ptr(model_matrix));
-  glUniformMatrix4fv(proj_location, 1, GL_FALSE, glm::value_ptr(proj_matrix));
   
   // Normal matrix: normal vectors to world coordinates
   normal_matrix = glm::inverseTranspose(glm::mat3(model_matrix));
@@ -550,8 +575,6 @@ void render(double currentTime,
   glUniform1f(material_specular_location, material_specular);
   glUniform1f(material_shininess_location, material_shininess);
 
-  glUniform3fv(camera_pos_location, 1, glm::value_ptr(camera_pos));
-
   // bind diffuse map
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, cubeDiffuseMap);
@@ -563,10 +586,10 @@ void render(double currentTime,
   glDrawArrays(GL_TRIANGLES, 0, 36);
   glBindVertexArray(0);
 
-  // Draw the pyramid
+  // Draw the tetrahedron
   glBindVertexArray(*tetrahedronVao);
   model_matrix = glm::mat4(1.f);
-  glm::vec3 pyramid_pos(0.7f,0.0f,0.0f);
+  glm::vec3 tetrahedron_pos(0.7f,0.0f,0.0f);
 
   model_matrix = glm::rotate(model_matrix,
                              glm::radians((float)currentTime * 30.0f),
@@ -576,16 +599,10 @@ void render(double currentTime,
                              glm::radians((float)currentTime * 40.0f),
                              glm::vec3(1.0f, 0.0f, 0.0f));
 
-  // Projection
-  proj_matrix = glm::perspective(glm::radians(30.0f),
-                                 (float) gl_width / (float) gl_height,
-                                 0.1f, 1000.0f);
-
-  model_matrix = glm::translate(model_matrix, pyramid_pos);
+  model_matrix = glm::translate(model_matrix, tetrahedron_pos);
   model_matrix = glm::scale(model_matrix, glm::vec3(tetrahedronScaleFactor));
 
   glUniformMatrix4fv(model_location, 1, GL_FALSE, glm::value_ptr(model_matrix));
-  glUniformMatrix4fv(proj_location, 1, GL_FALSE, glm::value_ptr(proj_matrix));
   
   // Normal matrix: normal vectors to world coordinates
   normal_matrix = glm::inverseTranspose(glm::mat3(model_matrix));
@@ -607,8 +624,14 @@ void render(double currentTime,
 }
 
 void processInput(GLFWwindow *window) {
-  if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+  if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
     glfwSetWindowShouldClose(window, 1);
+  
+  if (glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS)
+    activeCameraIndex = 0;
+  
+  if (glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS)
+    activeCameraIndex = 1;
 }
 
 // Callback function to track window size and update viewport
