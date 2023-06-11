@@ -517,16 +517,12 @@ void render(double currentTime,
   model_matrix = glm::mat4(1.f);
 
   model_matrix = glm::rotate(model_matrix,
-<<<<<<< HEAD
-                          glm::radians((float)currentTime * 45.0f),
-=======
-                          glm::radians((float)currentTime * 30.0f),
->>>>>>> b06ace2 (Update spinningcube_withlight.cpp)
-                          glm::vec3(0.0f, 1.0f, 0.0f));
+                             glm::radians((float)currentTime * 30.0f),
+                             glm::vec3(0.0f, 1.0f, 0.0f));
 
   model_matrix = glm::rotate(model_matrix,
-                            glm::radians((float)currentTime * 81.0f),
-                            glm::vec3(1.0f, 0.0f, 0.0f));
+                             glm::radians((float)currentTime * 81.0f),
+                             glm::vec3(1.0f, 0.0f, 0.0f));
 
   // Camera1 PoV
   view1_matrix = glm::lookAt(camera1_pos,                  // pos
